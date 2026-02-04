@@ -1,29 +1,51 @@
 import React from "react";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 
 const Managers = () => {
- const ref = useRef()
+
+  const ref = useRef();
+  const [form, setForm] = useState({
+    site: "",
+    username: "",
+    password: "",
+  });
+  const [passwordArray, setPasswordArray] = useState([]);
+
+  useEffect(() => {
+    let passwords = localStorage.getItem("passwords");
+ 
+    if(passwords) {
+      setPasswordArray(JSON.parse(passwords));
+    }
+  }, [])
 
   const showPassword = () => {
- 
-    if( ref.current.src.includes("eye.png")) {
+    if (ref.current.src.includes("eye.png")) {
       ref.current.src = "public/cross.png";
-         alert("show password");
     } else {
       ref.current.src = "public/eye.png";
     }
-  }
+  };
 
+  const savePassword = () => {
+    setPasswordArray([...passwordArray, form]);
+    localStorage.setItem("passwords", JSON.stringify([...passwordArray, form]));
+    setForm({
+      site: "",
+      username: "",
+      password: "",
+    });
+    console.log([...passwordArray, form])
+  };
 
-
-
-
-
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   return (
     <div>
-      <div class="absolute inset-0 -z-10 h-full w-full bg-green-50 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
-        <div class="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-green-400 opacity-20 blur-[100px]"></div>
+      <div className="absolute inset-0 -z-10 h-full w-full bg-green-50 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
+        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-green-400 opacity-20 blur-[100px]"></div>
       </div>
       {/* start coding */}
 
@@ -38,43 +60,49 @@ const Managers = () => {
         <div className=" flex flex-col items-center p-4 text-black gap-3 md:gap-5 lg:gap-8">
           <input
             type="text"
-            name=""
-            id=""
+            value={form.site}
+            onChange={handleChange}
+            name="site"
             placeholder="Enter Website URL"
             className="rounded-full border border-green-500 w-full px-4 py-1"
           />
           <div className="flex w-full justify-between gap-3">
             <input
               type="text"
+              value={form.username}
+              onChange={handleChange}
+              name="username"
               className="rounded-full border border-green-500 w-full px-4 py-1"
               placeholder="Enter Username"
             />
             <div className="relative  w-full justify-between gap-3">
               <input
-                type="password"
+                type="text"
+                value={form.password}
+                onChange={handleChange}
+                name="password"
                 className="rounded-full border border-green-500 w-full px-4 py-1"
                 placeholder="Enter Password"
               />
-              <span 
-              onClick={showPassword}
-              className="absolute -right-6 top-1/2 transform -translate-y-1/2 text-green-700 cursor-pointer">
-                <img 
-                ref={ref}
-                src="eye.png"
-                 alt="Eye_icon"
-                 width={90} />
+              <span
+                onClick={showPassword}
+                className="absolute -right-6 top-1/2 transform -translate-y-1/2 text-green-700 cursor-pointer"
+              >
+                <img ref={ref} src="eye.png" alt="Eye_icon" width={90} />
               </span>
             </div>
           </div>
-          <button className="flex justify-center items-center gap-2 bg-green-400 hover:bg-green-300 border border-green-900  rounded-full w-fit px-6 py-2">
+          <button
+            onClick={savePassword}
+            className="flex justify-center items-center gap-2 bg-green-400 hover:bg-green-300 border border-green-900  rounded-full w-fit px-6 py-2"
+          >
             <lord-icon
               src="https://cdn.lordicon.com/vjgknpfx.json"
               trigger="hover"
               stroke="bold"
               colors="primary:#fff,secondary:#111"
             ></lord-icon>
-            Add Password 
-            
+            Add Password
           </button>
         </div>
       </div>
