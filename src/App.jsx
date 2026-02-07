@@ -1,18 +1,19 @@
+import "./App.css";
+import Footer from "./components/Footer";
+import Managers from "./components/Managers";
 
-import './App.css'
-import Managers from './components/Managers'
-
-import Navbar from './components/Navbar'
+import Navbar from "./components/Navbar";
 
 function App() {
-
-
   return (
     <>
-    <Navbar/>
-    <Managers/>
+      <Navbar />
+      <div className="min-h-[80vh]">
+        <Managers />
+      </div>
+      <Footer />
     </>
-  )
+  );
 }
 
-export default App
+export default App;

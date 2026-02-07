@@ -30,6 +30,9 @@ const Navbar = () => {
             </a>
           </li>
         </ul>
+        <button className="flex justify-center items-center gap-2  border border-green-900 ring-white hover:ring-green-600 ring-1  rounded-full w-fit px-6 py-2">
+          <img src="public/github.png" alt="GitHub Logo" className="w-6 h-6" />
+        </button>
       </div>
     </nav>
   );
