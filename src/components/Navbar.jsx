@@ -4,7 +4,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="bg-slate-800 text-white sticky top-0 z-50">
+    <nav className="bg-slate-700 text-white sticky top-0 z-50">
       <div className="mycontainer flex justify-between items-center px-4 py-4 h-auto md:h-14">
         <a href="/">
           <h1 className="logo font-bold text-lg sm:text-xl md:text-2xl whitespace-nowrap">

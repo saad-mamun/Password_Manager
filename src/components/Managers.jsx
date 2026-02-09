@@ -13,13 +13,33 @@ const Managers = () => {
   });
   const [passwordArray, setPasswordArray] = useState([]);
 
+  const truncate = (text, max) => {
+    if (!text) return "";
+    return text.length > max ? text.substring(0, max - 3) + "..." : text;
+  };
+
+  const maskPassword = (password) => {
+    if (!password) return "";
+    return "•".repeat(Math.min(password.length, 8));
+  };
+
+  const getPasswords = async () => {
+    let req = await fetch("http://localhost:3000/");
+    let passwords = await req.json();
+    console.log(passwords);
+    setPasswordArray(passwords);
+  };
   useEffect(() => {
-    let passwords = localStorage.getItem("passwords");
-    if (passwords) {
-      setPasswordArray(JSON.parse(passwords));
-    }
+    getPasswords();
   }, []);
 
+  // localstorage er jonno
+  // useEffect(() => {
+  //   let passwords = localStorage.getItem("passwords");
+  //   if (passwords) {
+  //     setPasswordArray(JSON.parse(passwords));
+  //   }
+  // }, []);
 
   const copyText = (text) => {
     navigator.clipboard.writeText(text);
@@ -36,23 +56,34 @@ const Managers = () => {
     }
   };
 
-    const handleChange = (e) => {
-      setForm({ ...form, [e.target.name]: e.target.value });
-    };
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  const savePassword = () => {
-
+  const savePassword = async () => {
     // this line just for toast
     if (!form.site || !form.username || !form.password) {
       toast.error("Please fill all fields!");
       return;
     }
 
+    //..1 if any such id exists in the db, delete it
+    await fetch("http://localhost:3000/", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: form.id }),
+    });
+
     setPasswordArray([...passwordArray, { ...form, id: uuidv4() }]);
-    localStorage.setItem(
-      "passwords",
-      JSON.stringify([...passwordArray, { ...form, id: uuidv4() }]),
-    );
+    await fetch("http://localhost:3000/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...form, id: uuidv4() }),
+    });
+    // localStorage.setItem(
+    //   "passwords",
+    //   JSON.stringify([...passwordArray, { ...form, id: uuidv4() }]),
+    // );
     setForm({
       site: "",
       username: "",
@@ -61,24 +92,29 @@ const Managers = () => {
     toast.success("Password saved successfully!");
   };
 
-
-
-  const deletePassword = (id) => {
+  const deletePassword = async (id) => {
     const c = confirm("Do you really want to delete password?");
-    if(c){
-          const updatedArray = passwordArray.filter((item) => item.id !== id);
-          setPasswordArray(updatedArray);
-          localStorage.setItem("passwords", JSON.stringify(updatedArray));
-          toast.success("Password deleted successfully!");
+    if (c) {
+      const updatedArray = passwordArray.filter((item) => item.id !== id);
+      setPasswordArray(updatedArray);
+     await fetch("http://localhost:3000/", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      // localStorage.setItem("passwords", JSON.stringify(updatedArray));
+      toast.success("Password deleted successfully!");
     }
   };
 
+  const editPassword = (id) => {
 
-    const editPassword = (id) => {
-      setForm(passwordArray.filter(i=> i.id === id)[0])
-      setPasswordArray(passwordArray.filter((item) => item.id !== id));
-      toast.info("Password loaded for editing!");
-    };
+    //..2
+    setForm({ ...passwordArray.filter((i) => i.id === id)[0], id: id });
+
+    setPasswordArray(passwordArray.filter((item) => item.id !== id));
+    toast.info("Password loaded for editing!");
+  };
 
   return (
     <div>
@@ -94,7 +130,9 @@ const Managers = () => {
           Pass
           <span className="text-green-500">OP /&gt; </span>
         </h1>
-        <p className="text-green-900 text-base sm:text-lg md:text-xl text-center mt-2">Password Manager</p>
+        <p className="text-green-900 text-base sm:text-lg md:text-xl text-center mt-2">
+          Password Manager
+        </p>
 
         <div className="flex flex-col items-center p-4 sm:p-6 text-black gap-3 sm:gap-4 md:gap-5 lg:gap-8 max-w-2xl mx-auto">
           <input
@@ -148,10 +186,14 @@ const Managers = () => {
       </div>
 
       <div className="px-4 sm:px-6 md:px-8 lg:mycontainer mt-8 md:mt-12">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-8">Your Passwords</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-8">
+          Your Passwords
+        </h1>
         {passwordArray.length === 0 && (
           <div className="text-center text-gray-500 py-12">
-            <p className="text-sm md:text-base">No passwords saved yet. Add one to get started!</p>
+            <p className="text-sm md:text-base">
+              No passwords saved yet. Add one to get started!
+            </p>
           </div>
         )}
         {passwordArray.length !== 0 && (
@@ -167,16 +209,16 @@ const Managers = () => {
                     <div className="space-y-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500 font-semibold mb-1">Website</p>
+                          <p className="text-xs text-gray-500 font-semibold mb-1">
+                            Website
+                          </p>
                           <a
                             href={item.site}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-green-600 hover:text-green-700 font-medium text-sm truncate block"
                           >
-                            {item.site.length > 20
-                              ? item.site.substring(0, 17) + "..."
-                              : item.site}
+                            {truncate(item.site, 30)}
                           </a>
                         </div>
                         <button
@@ -184,21 +226,17 @@ const Managers = () => {
                           className="ml-2 p-1.5 hover:bg-green-100 rounded transition"
                           title="Copy site"
                         >
-                          <img
-                            src="copy.png"
-                            alt="Copy"
-                            className="w-4 h-4"
-                          />
+                          <img src="copy.png" alt="Copy" className="w-4 h-4" />
                         </button>
                       </div>
 
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500 font-semibold mb-1">Username</p>
+                          <p className="text-xs text-gray-500 font-semibold mb-1">
+                            Username
+                          </p>
                           <p className="text-sm font-medium text-gray-800 truncate">
-                            {item.username.length > 20
-                              ? item.username.substring(0, 17) + "..."
-                              : item.username}
+                            {truncate(item.username, 20)}
                           </p>
                         </div>
                         <button
@@ -206,19 +244,17 @@ const Managers = () => {
                           className="ml-2 p-1.5 hover:bg-green-100 rounded transition"
                           title="Copy username"
                         >
-                          <img
-                            src="copy.png"
-                            alt="Copy"
-                            className="w-4 h-4"
-                          />
+                          <img src="copy.png" alt="Copy" className="w-4 h-4" />
                         </button>
                       </div>
 
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500 font-semibold mb-1">Password</p>
+                          <p className="text-xs text-gray-500 font-semibold mb-1">
+                            Password
+                          </p>
                           <p className="text-sm font-medium text-gray-800 tracking-widest">
-                            {".".repeat(Math.min(item.password.length, 8))}
+                            {maskPassword(item.password)}
                           </p>
                         </div>
                         <button
@@ -226,11 +262,7 @@ const Managers = () => {
                           className="ml-2 p-1.5 hover:bg-green-100 rounded transition"
                           title="Copy password"
                         >
-                          <img
-                            src="copy.png"
-                            alt="Copy"
-                            className="w-4 h-4"
-                          />
+                          <img src="copy.png" alt="Copy" className="w-4 h-4" />
                         </button>
                       </div>
 
@@ -271,10 +303,18 @@ const Managers = () => {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gradient-to-r from-green-700 to-green-900 text-white">
-                    <th className="px-6 py-4 text-left text-sm font-bold">Website</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold">Username</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold">Password</th>
-                    <th className="px-6 py-4 text-center text-sm font-bold">Actions</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold">
+                      Website
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-bold">
+                      Username
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-bold">
+                      Password
+                    </th>
+                    <th className="px-6 py-4 text-center text-sm font-bold">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -295,9 +335,7 @@ const Managers = () => {
                               className="text-green-600 hover:text-green-700 font-medium text-sm truncate"
                               title={item.site}
                             >
-                              {item.site.length > 30
-                                ? item.site.substring(0, 27) + "..."
-                                : item.site}
+                              {truncate(item.site, 30)}
                             </a>
                             <button
                               onClick={() => copyText(item.site)}
@@ -315,10 +353,11 @@ const Managers = () => {
 
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-between gap-3 group">
-                            <span className="text-gray-700 text-sm truncate" title={item.username}>
-                              {item.username.length > 25
-                                ? item.username.substring(0, 22) + "..."
-                                : item.username}
+                            <span
+                              className="text-gray-700 text-sm truncate"
+                              title={item.username}
+                            >
+                              {truncate(item.username, 25)}
                             </span>
                             <button
                               onClick={() => copyText(item.username)}
@@ -337,7 +376,7 @@ const Managers = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-between gap-3 group">
                             <span className="text-gray-700 text-sm font-mono tracking-widest">
-                              {"•".repeat(Math.min(item.password.length, 8))}
+                              {maskPassword(item.password)}
                             </span>
                             <button
                               onClick={() => copyText(item.password)}
